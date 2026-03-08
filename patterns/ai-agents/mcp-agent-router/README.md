@@ -1,87 +1,73 @@
-# Pattern: mcp-agent-router
+# mcp-agent-router
 
-## What it does
-Routes user queries to **specialized agents**, each with only the MCP tools it needs — instead of one bloated agent with every tool.
+## What is this?
+Route user queries to specialized agents, each with access to only the MCP tools they need. Instead of one all-knowing agent, you get clean separation of concerns and minimal tool surface per agent.
 
-A lightweight keyword classifier picks the right agent. Each agent runs its own isolated MCP server connections and an autonomous tool-call loop until the task is done.
+## When to use?
+- You have multiple domains (code review, research, security, etc.)
+- Each domain needs different external tools (GitHub MCP, Fetch MCP, Filesystem MCP...)
+- You want automatic routing by intent, or explicit agent selection
+- You need per-agent conversation memory within a session
 
-## When to use
-- You have 2+ distinct domains (code, research, security, data, …)
-- Different domains need different external tools (GitHub, browser, DB, APIs)
-- You want cheaper/faster calls by limiting each agent's tool surface
-- You want cleaner prompts (focused system prompts > one mega-prompt)
+## Core Concept
 
-## Core concepts
-
-| Concept | Description |
-|---|---|
-| `Agent` | Dataclass: name, system_prompt, keyword list, MCP server configs |
-| `AgentRouter` | Classifies queries → selects agent → runs it |
-| `classify()` | Keyword match over agent.keywords; falls back to default_agent |
-| `run_agent()` | Connects MCP servers, enters agentic loop, returns final text |
-| Per-agent history | Each agent gets its own conversation history (multi-turn) |
-
-## File
 ```
-core.py   ← drop in, subclass or compose
+User Query
+    │
+    ▼
+[Router] classifies intent
+    │
+    ├── Code Review  ──► Agent A: [GitHub MCP, Filesystem MCP]
+    ├── Security     ──► Agent B: [GitHub MCP, Fetch MCP]
+    ├── Research     ──► Agent C: [Fetch MCP, Filesystem MCP]
+    └── Custom       ──► Agent D: [Your MCP]
 ```
 
-## Quick usage
-```python
-from core import Agent, AgentRouter
-
-researcher = Agent(
-    name="Researcher",
-    description="Fetches and synthesizes web content",
-    system_prompt="You are a research assistant. Cite your sources.",
-    keywords=["research", "find", "what is", "explain", "summarize"],
-    mcp_servers=[
-        {"name": "fetch", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-fetch"]},
-    ],
-)
-
-coder = Agent(
-    name="Code Reviewer",
-    description="Reviews code for bugs and quality",
-    system_prompt="You are an expert code reviewer. Be specific, cite line numbers.",
-    keywords=["review", "bug", "refactor", "code", "pr", "pull request"],
-    mcp_servers=[
-        {"name": "github", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"]},
-        {"name": "filesystem", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]},
-    ],
-)
-
-router = AgentRouter(
-    agents={"researcher": researcher, "coder": coder},
-    default_agent="researcher",
-)
-
-agent_id, response = router.route_and_run("Review this PR for security issues")
-print(f"[{agent_id}] {response}")
-```
-
-## MCP server config format
-```python
-{
-    "name": "my-server",        # display name only
-    "command": "npx",           # executable
-    "args": ["-y", "@mcp/server-fetch"],  # args list
-    "env": {"API_KEY": "..."},  # optional extra env vars
-}
-```
-
-## Extension points
-- **Custom classifier:** Override `AgentRouter.classify()` for LLM-based routing
-- **Parallel agents:** Run `_run_agent_async()` concurrently for fan-out patterns
-- **Agent chaining:** Pass one agent's response as query to another
-- **Persistent history:** Serialize `router.histories` between sessions
+Each specialist agent only sees the tools it needs — safer, cheaper, more focused.
 
 ## Dependencies
 ```
-anthropic>=0.25
-mcp>=1.0
+anthropic
+mcp
 ```
 
+## Usage
+```python
+from core import Agent, MCPAgentRouter
+
+# Define specialist agents
+agents = {
+    "code_reviewer": Agent(
+        name="Code Reviewer",
+        system_prompt="You are an expert code reviewer...",
+        mcp_servers=[
+            {"name": "github", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"]},
+        ],
+    ),
+    "researcher": Agent(
+        name="Researcher",
+        system_prompt="You are a research specialist...",
+        mcp_servers=[
+            {"name": "fetch", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-fetch"]},
+        ],
+    ),
+}
+
+router = MCPAgentRouter(agents=agents, api_key="your-anthropic-key")
+
+# Auto-route by intent
+response = await router.route_and_run("Review this PR for security issues")
+
+# Or explicitly select agent
+response = await router.run_agent("researcher", "What is the latest on MCP?")
+```
+
+## Key Properties
+- **Minimal tool surface**: each agent only gets what it needs
+- **Per-agent memory**: conversation history kept separate
+- **Auto-routing**: LLM classifies intent → picks specialist
+- **Streaming-ready**: async generator for streamed responses
+
 ## Source
-Extracted from: https://github.com/Shubhamsaboo/awesome-llm-apps  
-Path: `mcp_ai_agents/multi_mcp_agent_router/agent_forge.py`
+- Original Repo: https://github.com/Shubhamsaboo/awesome-llm-apps
+- Extracted: 2026-03-08
