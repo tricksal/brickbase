@@ -83,7 +83,7 @@ Layer 3: Task-relevante Observations (on-demand, ~1000 Token)
 
 ## Implementierung: Minimale Variante
 
-Ohne Plugin, nur mit OpenClaw/Botto:
+Ohne Plugin, nur mit OpenClaw:
 ```bash
 # Nach jeder Session: Observations ins Memory-File schreiben
 echo "### Session $(date +%Y-%m-%d)" >> memory/sessions.md
@@ -93,7 +93,7 @@ echo "$CLAUDE_LAST_OBSERVATIONS" | claude-compress >> memory/sessions.md
 memory_search "was haben wir zuletzt bei Projekt X gemacht?"
 ```
 
-Das ist genau das, was Botto's `memory/YYYY-MM-DD.md` manuell macht — 
+Das ist das, was viele persönliche Agenten mit `memory/YYYY-MM-DD.md` manuell machen — 
 claude-mem automatisiert es vollständig.
 
 ---
@@ -101,7 +101,7 @@ claude-mem automatisiert es vollständig.
 ## Wann nutzen?
 
 ✅ **Gut wenn:**
-- Langläufige Projekte mit vielen Sessions (Kognio, TelefonAgent)
+- Langläufige Projekte mit vielen Sessions (z.B. komplexe Feature-Entwicklungen)
 - Viele kleine Tool-Calls die zusammen Bedeutung haben
 - Kein manuelles Memory-Management gewünscht
 

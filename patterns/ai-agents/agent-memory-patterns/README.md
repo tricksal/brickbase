@@ -332,7 +332,7 @@ Brauche ich Persistenz über Sessions?
 
 **Für Coding Agents** (wie Claude Code, Cline, Cursor): **Structured Context Bank (Cline Memory Bank)** — semantisch getrennte Dateien mit dedizierter `activeContext.md` für den operativen Arbeitsstand. Hierarchical Blocks (Letta) als Alternative, wenn der Agent seine eigenen Memory-Blocks editieren soll.
 
-**Für persönliche Assistenten** (wie OpenClaw/Botto): File-Based + optionaler Vector-Index — pragmatisch, human-readable, gut debuggbar.
+**Für persönliche Assistenten** (wie OpenClaw): File-Based + optionaler Vector-Index — pragmatisch, human-readable, gut debuggbar.
 
 **Für Production Chatbots** (Customer Support, Healthcare): Mem0 — automatische Extraktion, Multi-User, skalierbar.
 
